@@ -1,0 +1,527 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyM2rHMTziJmlISG2cVfslLa",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/AsimHanif150/Ai-ML_internship_01-/blob/main/assignment1\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 1,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "rap88iAXnVaO",
+        "outputId": "61b81403-1e8c-414a-d234-6b2cefe3061c"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "30000 pages |  declining rate: 0.542\n"
+          ]
+        }
+      ],
+      "source": [
+        "import os, sys, subprocess\n",
+        "\n",
+        "IN_COLAB = \"google.colab\" in sys.modules\n",
+        "REPO_URL = \"https://github.com/flyrank-bih/flyrank-ml-internship-starter\"\n",
+        "REPO_DIR = \"flyrank-ml-internship-starter\"\n",
+        "\n",
+        "if IN_COLAB:\n",
+        "    if not os.path.isdir(REPO_DIR):\n",
+        "        subprocess.run([\"git\", \"clone\", \"--depth\", \"1\", REPO_URL, REPO_DIR], check=True)\n",
+        "    os.chdir(REPO_DIR)\n",
+        "    subprocess.run([sys.executable, \"-m\", \"pip\", \"install\", \"-q\", \"-r\", \"requirements.txt\"], check=True)\n",
+        "elif os.path.basename(os.getcwd()) == \"notebooks\":\n",
+        "    os.chdir(\"..\")\n",
+        "\n",
+        "import pandas as pd, numpy as np\n",
+        "df = pd.read_csv(\"data/raw/content_refresh_anonymized.csv\")\n",
+        "\n",
+        "# The label: a page is 'declining' when its recent trend is down. Simple, honest starter label.\n",
+        "df[\"is_declining_label\"] = df[\"trend_direction\"].str.lower().eq(\"down\").astype(int)\n",
+        "print(df.shape[0], \"pages |  declining rate:\", round(df[\"is_declining_label\"].mean(), 3))\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "stale   = (df[\"days_since_last_update\"] >= 180).astype(int)\n",
+        "visible = (df[\"impressions_90d\"] >= 500).astype(int)\n",
+        "df[\"hand_rule_score\"] = stale * visible * df[\"impressions_90d\"]\n",
+        "\n",
+        "top10 = df.sort_values(\"hand_rule_score\", ascending=False).head(10)\n",
+        "top10[[\"impressions_90d\", \"days_since_last_update\", \"avg_position\", \"ctr\", \"trend_direction\"]]\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 363
+        },
+        "id": "aakDsaYq0bl3",
+        "outputId": "c05cba13-b7f7-4b1b-cc88-bb0833b5e08d"
+      },
+      "execution_count": 2,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "       impressions_90d  days_since_last_update  avg_position   ctr  \\\n",
+              "16751            61678                     194          19.7  0.15   \n",
+              "16514            59472                     194          24.8  0.13   \n",
+              "7021             25715                     194          22.2  0.23   \n",
+              "21268            13299                     193          10.5  0.49   \n",
+              "11489             7812                     194          39.0  0.01   \n",
+              "12045             7558                     193          17.9  0.20   \n",
+              "698               4590                     194          31.0  0.00   \n",
+              "5327              4556                     194          16.4  0.33   \n",
+              "26810             4429                     194          25.3  0.38   \n",
+              "20837             1697                     193          15.8  0.12   \n",
+              "\n",
+              "      trend_direction  \n",
+              "16751            down  \n",
+              "16514            down  \n",
+              "7021             down  \n",
+              "21268            down  \n",
+              "11489            down  \n",
+              "12045            down  \n",
+              "698              down  \n",
+              "5327             down  \n",
+              "26810            down  \n",
+              "20837            down  "
+            ],
+            "text/html": [
+              "\n",
+              "  <div id=\"df-0d0e932b-697a-4820-8997-f5eeed52f5c1\" class=\"colab-df-container\">\n",
+              "    <div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>impressions_90d</th>\n",
+              "      <th>days_since_last_update</th>\n",
+              "      <th>avg_position</th>\n",
+              "      <th>ctr</th>\n",
+              "      <th>trend_direction</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>16751</th>\n",
+              "      <td>61678</td>\n",
+              "      <td>194</td>\n",
+              "      <td>19.7</td>\n",
+              "      <td>0.15</td>\n",
+              "      <td>down</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>16514</th>\n",
+              "      <td>59472</td>\n",
+              "      <td>194</td>\n",
+              "      <td>24.8</td>\n",
+              "      <td>0.13</td>\n",
+              "      <td>down</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>7021</th>\n",
+              "      <td>25715</td>\n",
+              "      <td>194</td>\n",
+              "      <td>22.2</td>\n",
+              "      <td>0.23</td>\n",
+              "      <td>down</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>21268</th>\n",
+              "      <td>13299</td>\n",
+              "      <td>193</td>\n",
+              "      <td>10.5</td>\n",
+              "      <td>0.49</td>\n",
+              "      <td>down</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>11489</th>\n",
+              "      <td>7812</td>\n",
+              "      <td>194</td>\n",
+              "      <td>39.0</td>\n",
+              "      <td>0.01</td>\n",
+              "      <td>down</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>12045</th>\n",
+              "      <td>7558</td>\n",
+              "      <td>193</td>\n",
+              "      <td>17.9</td>\n",
+              "      <td>0.20</td>\n",
+              "      <td>down</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>698</th>\n",
+              "      <td>4590</td>\n",
+              "      <td>194</td>\n",
+              "      <td>31.0</td>\n",
+              "      <td>0.00</td>\n",
+              "      <td>down</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>5327</th>\n",
+              "      <td>4556</td>\n",
+              "      <td>194</td>\n",
+              "      <td>16.4</td>\n",
+              "      <td>0.33</td>\n",
+              "      <td>down</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>26810</th>\n",
+              "      <td>4429</td>\n",
+              "      <td>194</td>\n",
+              "      <td>25.3</td>\n",
+              "      <td>0.38</td>\n",
+              "      <td>down</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>20837</th>\n",
+              "      <td>1697</td>\n",
+              "      <td>193</td>\n",
+              "      <td>15.8</td>\n",
+              "      <td>0.12</td>\n",
+              "      <td>down</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>\n",
+              "    <div class=\"colab-df-buttons\">\n",
+              "\n",
+              "  <div class=\"colab-df-container\">\n",
+              "    <button class=\"colab-df-convert\" onclick=\"convertToInteractive('df-0d0e932b-697a-4820-8997-f5eeed52f5c1')\"\n",
+              "            title=\"Convert this dataframe to an interactive table.\"\n",
+              "            style=\"display:none;\">\n",
+              "\n",
+              "  <svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24px\" viewBox=\"0 -960 960 960\">\n",
+              "    <path d=\"M120-120v-720h720v720H120Zm60-500h600v-160H180v160Zm220 220h160v-160H400v160Zm0 220h160v-160H400v160ZM180-400h160v-160H180v160Zm440 0h160v-160H620v160ZM180-180h160v-160H180v160Zm440 0h160v-160H620v160Z\"/>\n",
+              "  </svg>\n",
+              "    </button>\n",
+              "\n",
+              "  <style>\n",
+              "    .colab-df-container {\n",
+              "      display:flex;\n",
+              "      gap: 12px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert {\n",
+              "      background-color: #E8F0FE;\n",
+              "      border: none;\n",
+              "      border-radius: 50%;\n",
+              "      cursor: pointer;\n",
+              "      display: none;\n",
+              "      fill: #1967D2;\n",
+              "      height: 32px;\n",
+              "      padding: 0 0 0 0;\n",
+              "      width: 32px;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-convert:hover {\n",
+              "      background-color: #E2EBFA;\n",
+              "      box-shadow: 0px 1px 2px rgba(60, 64, 67, 0.3), 0px 1px 3px 1px rgba(60, 64, 67, 0.15);\n",
+              "      fill: #174EA6;\n",
+              "    }\n",
+              "\n",
+              "    .colab-df-buttons div {\n",
+              "      margin-bottom: 4px;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert {\n",
+              "      background-color: #3B4455;\n",
+              "      fill: #D2E3FC;\n",
+              "    }\n",
+              "\n",
+              "    [theme=dark] .colab-df-convert:hover {\n",
+              "      background-color: #434B5C;\n",
+              "      box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15);\n",
+              "      filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.3));\n",
+              "      fill: #FFFFFF;\n",
+              "    }\n",
+              "  </style>\n",
+              "\n",
+              "    <script>\n",
+              "      const buttonEl =\n",
+              "        document.querySelector('#df-0d0e932b-697a-4820-8997-f5eeed52f5c1 button.colab-df-convert');\n",
+              "      buttonEl.style.display =\n",
+              "        google.colab.kernel.accessAllowed ? 'block' : 'none';\n",
+              "\n",
+              "      async function convertToInteractive(key) {\n",
+              "        const element = document.querySelector('#df-0d0e932b-697a-4820-8997-f5eeed52f5c1');\n",
+              "        const dataTable =\n",
+              "          await google.colab.kernel.invokeFunction('convertToInteractive',\n",
+              "                                                    [key], {});\n",
+              "        if (!dataTable) return;\n",
+              "\n",
+              "        const docLinkHtml = 'Like what you see? Visit the ' +\n",
+              "          '<a target=\"_blank\" href=https://colab.research.google.com/notebooks/data_table.ipynb>data table notebook</a>'\n",
+              "          + ' to learn more about interactive tables.';\n",
+              "        element.innerHTML = '';\n",
+              "        dataTable['output_type'] = 'display_data';\n",
+              "        await google.colab.output.renderOutput(dataTable, element);\n",
+              "        const docLink = document.createElement('div');\n",
+              "        docLink.innerHTML = docLinkHtml;\n",
+              "        element.appendChild(docLink);\n",
+              "      }\n",
+              "    </script>\n",
+              "  </div>\n",
+              "\n",
+              "\n",
+              "    </div>\n",
+              "  </div>\n"
+            ],
+            "application/vnd.google.colaboratory.intrinsic+json": {
+              "type": "dataframe",
+              "summary": "{\n  \"name\": \"top10[[\\\"impressions_90d\\\", \\\"days_since_last_update\\\", \\\"avg_position\\\", \\\"ctr\\\", \\\"trend_direction\\\"]]\",\n  \"rows\": 10,\n  \"fields\": [\n    {\n      \"column\": \"impressions_90d\",\n      \"properties\": {\n        \"dtype\": \"number\",\n        \"std\": 22903,\n        \"min\": 1697,\n        \"max\": 61678,\n        \"num_unique_values\": 10,\n        \"samples\": [\n          4429,\n          59472,\n          7558\n        ],\n        \"semantic_type\": \"\",\n        \"description\": \"\"\n      }\n    },\n    {\n      \"column\": \"days_since_last_update\",\n      \"properties\": {\n        \"dtype\": \"number\",\n        \"std\": 0,\n        \"min\": 193,\n        \"max\": 194,\n        \"num_unique_values\": 2,\n        \"samples\": [\n          193,\n          194\n        ],\n        \"semantic_type\": \"\",\n        \"description\": \"\"\n      }\n    },\n    {\n      \"column\": \"avg_position\",\n      \"properties\": {\n        \"dtype\": \"number\",\n        \"std\": 8.247854939989615,\n        \"min\": 10.5,\n        \"max\": 39.0,\n        \"num_unique_values\": 10,\n        \"samples\": [\n          25.3,\n          24.8\n        ],\n        \"semantic_type\": \"\",\n        \"description\": \"\"\n      }\n    },\n    {\n      \"column\": \"ctr\",\n      \"properties\": {\n        \"dtype\": \"number\",\n        \"std\": 0.1577762128247897,\n        \"min\": 0.0,\n        \"max\": 0.49,\n        \"num_unique_values\": 10,\n        \"samples\": [\n          0.38,\n          0.13\n        ],\n        \"semantic_type\": \"\",\n        \"description\": \"\"\n      }\n    },\n    {\n      \"column\": \"trend_direction\",\n      \"properties\": {\n        \"dtype\": \"category\",\n        \"num_unique_values\": 1,\n        \"samples\": [\n          \"down\"\n        ],\n        \"semantic_type\": \"\",\n        \"description\": \"\"\n      }\n    }\n  ]\n}"
+            }
+          },
+          "metadata": {},
+          "execution_count": 2
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from sklearn.tree import DecisionTreeClassifier, export_text\n",
+        "\n",
+        "features = [\n",
+        "    \"content_age_days\",\n",
+        "    \"days_since_last_update\",\n",
+        "    \"impressions_90d\",\n",
+        "    \"avg_position\",\n",
+        "    \"ctr\",\n",
+        "    \"word_count\"\n",
+        "]\n",
+        "\n",
+        "X = df[features].replace([np.inf, -np.inf], np.nan).fillna(0)\n",
+        "\n",
+        "# Target variable\n",
+        "y = df[\"is_declining_label\"]\n",
+        "\n",
+        "tree = DecisionTreeClassifier(\n",
+        "    max_depth=2,\n",
+        "    class_weight=\"balanced\",\n",
+        "    random_state=42\n",
+        ")\n",
+        "\n",
+        "tree.fit(X, y)\n",
+        "\n",
+        "print(export_text(tree, feature_names=features))"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "aMOFT8no0cUU",
+        "outputId": "2f5d778a-0320-43bb-9c72-b32aa09013b0"
+      },
+      "execution_count": 3,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "|--- impressions_90d <= 5.50\n",
+            "|   |--- avg_position <= 0.75\n",
+            "|   |   |--- class: 0\n",
+            "|   |--- avg_position >  0.75\n",
+            "|   |   |--- class: 0\n",
+            "|--- impressions_90d >  5.50\n",
+            "|   |--- content_age_days <= 312.50\n",
+            "|   |   |--- class: 1\n",
+            "|   |--- content_age_days >  312.50\n",
+            "|   |   |--- class: 0\n",
+            "\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from sklearn.tree import DecisionTreeClassifier, export_text\n",
+        "\n",
+        "features = [\"content_age_days\", \"days_since_last_update\", \"impressions_90d\",\n",
+        "            \"avg_position\", \"ctr\", \"word_count\"]\n",
+        "X = df[features].replace([np.inf, -np.inf], np.nan).fillna(0)\n",
+        "\n",
+        "tree = DecisionTreeClassifier(max_depth=2, class_weight=\"balanced\", random_state=42)\n",
+        "tree.fit(X, y)\n",
+        "\n",
+        "print(export_text(tree, feature_names=features))"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "EOpUtv1z0nFE",
+        "outputId": "c2921a3a-51ae-4cbc-834a-0ecc75403077"
+      },
+      "execution_count": 4,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "|--- impressions_90d <= 5.50\n",
+            "|   |--- avg_position <= 0.75\n",
+            "|   |   |--- class: 0\n",
+            "|   |--- avg_position >  0.75\n",
+            "|   |   |--- class: 0\n",
+            "|--- impressions_90d >  5.50\n",
+            "|   |--- content_age_days <= 312.50\n",
+            "|   |   |--- class: 1\n",
+            "|   |--- content_age_days >  312.50\n",
+            "|   |   |--- class: 0\n",
+            "\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "def precision_at_k(scores, y_true, k):\n",
+        "    top_k = np.argsort(scores)[::-1][:k]\n",
+        "    return y_true.iloc[top_k].mean()"
+      ],
+      "metadata": {
+        "id": "SCSmv39a08If"
+      },
+      "execution_count": 5,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "tree_score = tree.predict_proba(X)[:, 1]\n",
+        "\n",
+        "for k in (20, 50):\n",
+        "    hr = precision_at_k(df[\"hand_rule_score\"], y, k)\n",
+        "    tr = precision_at_k(tree_score, y, k)\n",
+        "\n",
+        "    print(f\"Precision@{k}: hand rule {hr:.3f} vs tree {tr:.3f}\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "uUn_Y5cv1Dli",
+        "outputId": "5442ce98-31a4-429e-91e4-13d662d53c4c"
+      },
+      "execution_count": 6,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Precision@20: hand rule 0.800 vs tree 0.650\n",
+            "Precision@50: hand rule 0.580 vs tree 0.680\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Your discovery here — extending Discovery B by content_type\n",
+        "\n",
+        "# Reuse the same filter as Discovery B: only pages with meaningful impressions\n",
+        "visible = df[df[\"impressions_90d\"] >= 100]\n",
+        "\n",
+        "# Average CTR per content_type, within each position tier\n",
+        "ctr_by_type_and_pos = (\n",
+        "    visible.groupby([\"position_tier\", \"content_type\"])[\"ctr\"]\n",
+        "    .mean()\n",
+        "    .unstack()\n",
+        "    .round(4)\n",
+        ")\n",
+        "print(ctr_by_type_and_pos.to_string())\n",
+        "\n",
+        "# For each position tier, which content_type has the lowest CTR?\n",
+        "worst_by_tier = ctr_by_type_and_pos.idxmin(axis=1)\n",
+        "print(\"\\nWorst-performing content_type per position tier:\")\n",
+        "print(worst_by_tier.to_string())\n",
+        "\n",
+        "print(\"\\nObserved: CTR still drops by position tier as expected, but the size of the \"\n",
+        "      \"drop and the worst-performing content_type are not the same across tiers — \"\n",
+        "      \"this is directional, not a proof of causation.\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "veI3LD5l1s0m",
+        "outputId": "8fbb135b-4086-44bb-96c7-d8f52eeb8aed"
+      },
+      "execution_count": 7,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "content_type   comparison article  feedly article  keyword article\n",
+            "position_tier                                                     \n",
+            "deep                          NaN          0.0440           0.0555\n",
+            "page_1                     0.1412          0.9048           0.3458\n",
+            "page_3_5                   0.0940          0.1656           0.1427\n",
+            "striking                   0.1474          0.3580           0.2559\n",
+            "top_3                      0.0000          2.9000           0.3104\n",
+            "\n",
+            "Worst-performing content_type per position tier:\n",
+            "position_tier\n",
+            "deep            feedly article\n",
+            "page_1      comparison article\n",
+            "page_3_5    comparison article\n",
+            "striking    comparison article\n",
+            "top_3       comparison article\n",
+            "\n",
+            "Observed: CTR still drops by position tier as expected, but the size of the drop and the worst-performing content_type are not the same across tiers — this is directional, not a proof of causation.\n"
+          ]
+        }
+      ]
+    }
+  ]
+}
